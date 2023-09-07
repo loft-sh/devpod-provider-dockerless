@@ -2,33 +2,24 @@ package dockerless
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
 
-	"github.com/loft-sh/devpod/pkg/devcontainer/config"
 	"github.com/loft-sh/devpod/pkg/driver"
 )
 
 func (p *DockerlessProvider) Start(ctx context.Context, workspaceId string) error {
 	containerDIR := filepath.Join(p.Config.TargetDir, "rootfs", workspaceId)
 
-	containerDetailsBytes, err := os.ReadFile(containerDIR + "/containerDetails")
-	if err != nil {
-		return err
-	}
-
-	containerDetails := config.ContainerDetails{}
-
-	err = json.Unmarshal(containerDetailsBytes, &containerDetails)
-	if err != nil {
-		return err
-	}
-
 	// return early if the container is already running
+	containerDetails, err := p.Find(ctx, workspaceId)
+	if err != nil {
+		return err
+	}
+
 	if containerDetails.State.Status == "running" {
 		return nil
 	}
@@ -68,7 +59,6 @@ func (p *DockerlessProvider) Start(ctx context.Context, workspaceId string) erro
 		filepath.Join("/tmp", "dockerless", workspaceId),
 		os.Args[0],
 		"enter",
-		base64.StdEncoding.EncodeToString([]byte(workspaceId)),
 	}
 
 	cmd := exec.Command(command, args...)

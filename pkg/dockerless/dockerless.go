@@ -57,6 +57,27 @@ func (p *DockerlessProvider) Find(ctx context.Context, workspaceId string) (*con
 		return nil, err
 	}
 
+	status := "stopped"
+	pidPath := filepath.Join("/tmp", "dockerless", workspaceId, "child_pid")
+
+	_, err = os.Stat(pidPath)
+	if err != nil {
+		status = "stopped"
+	}
+
+	pid, err := os.ReadFile(pidPath)
+	if err != nil {
+		status = "stopped"
+	}
+
+	_, err = os.Stat(filepath.Join("/proc", string(pid), "mem"))
+	if err == nil {
+		// file exists, pid is running
+		status = "running"
+	}
+
+	containerDetails.State.Status = status
+
 	return &containerDetails, nil
 }
 
