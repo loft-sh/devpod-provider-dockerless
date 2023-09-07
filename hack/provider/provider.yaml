@@ -1,0 +1,35 @@
+name: dockerless
+version: ##VERSION##
+description: |-
+  DevPod without Docker
+icon: https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Terminalicon2.png/900px-Terminalicon2.png
+iconDark: https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Terminalicon2.png/900px-Terminalicon2.png
+options:
+  TARGET_DIR:
+    description: Root directory for the container and images
+    required: true
+agent:
+  containerInactivityTimeout: ${INACTIVITY_TIMEOUT}
+  local: true
+  binaries:
+    DOCKERLESS_PROVIDER:
+      - os: linux
+        arch: amd64
+        path: https://github.com/loft-sh/devpod-provider-dockerless/releases/download/##VERSION##/devpod-provider-dockerless-linux-amd64
+        checksum: ##CHECKSUM_LINUX_AMD64##
+      - os: linux
+        arch: arm64
+        path: https://github.com/loft-sh/devpod-provider-dockerless/releases/download/##VERSION##/devpod-provider-dockerless-linux-arm64
+        checksum: ##CHECKSUM_LINUX_ARM64##
+  driver: custom
+  custom:
+    findDevContainer: ${DOCKERLESS_PROVIDER} find # docker inspect
+    commandDevContainer: ${DOCKERLESS_PROVIDER} command # docker exec
+    startDevContainer: ${DOCKERLESS_PROVIDER} start # docker start
+    stopDevContainer: ${DOCKERLESS_PROVIDER} stop # docker stop
+    runDevContainer: ${DOCKERLESS_PROVIDER} run   # docker pull && docker create && docker start
+    deleteDevContainer: ${DOCKERLESS_PROVIDER} delete # docker rm -f
+    targetArchitecture: ${DOCKERLESS_PROVIDER} target-architecture # os.GOARCH
+exec:
+  command: |-
+    "${DEVPOD}" helper sh -c "${COMMAND}"
