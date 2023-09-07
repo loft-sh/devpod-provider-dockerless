@@ -1,6 +1,7 @@
 module github.com/loft-sh/devpod-provider-dockerless
 
 require (
+	github.com/google/go-containerregistry v0.15.2
 	github.com/loft-sh/devpod v0.3.8-0.20230906125659-9730aac9d3a8
 	github.com/loft-sh/log v0.0.0-20230824104949-bd516c25712a
 	github.com/spf13/cobra v1.7.0
@@ -28,7 +29,6 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/google/go-containerregistry v0.15.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect

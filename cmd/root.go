@@ -56,6 +56,7 @@ func BuildRoot() *cobra.Command {
 	rootCmd := NewRootCmd()
 	rootCmd.Version = version.Version
 
+	rootCmd.AddCommand(NewEnterCmd())
 	rootCmd.AddCommand(NewFindCmd())
 	rootCmd.AddCommand(NewDeleteCmd())
 	rootCmd.AddCommand(NewStartCmd())
