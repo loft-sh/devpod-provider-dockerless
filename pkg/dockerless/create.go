@@ -31,9 +31,10 @@ func (p *DockerlessProvider) Create(ctx context.Context, workspaceId string, run
 
 	imageDir := filepath.Join(p.Config.TargetDir, "images", ref.Name())
 	containerDIR := filepath.Join(p.Config.TargetDir, "rootfs", workspaceId)
+	statusDIR := filepath.Join(p.Config.TargetDir, "status", workspaceId)
 
 	// save the config to file
-	configPath := filepath.Join(containerDIR, "runOptions")
+	configPath := filepath.Join(statusDIR, "runOptions")
 
 	// if the container already exists, exit
 	_, err = os.Stat(configPath)
@@ -42,6 +43,11 @@ func (p *DockerlessProvider) Create(ctx context.Context, workspaceId string, run
 	}
 
 	err = os.MkdirAll(containerDIR, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	err = os.MkdirAll(statusDIR, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -117,7 +123,7 @@ func (p *DockerlessProvider) Create(ctx context.Context, workspaceId string, run
 	}
 
 	containerDetails := initializeContainerDetails(ctx, workspaceId, runOptions)
-	detailsPath := filepath.Join(containerDIR, "containerDetails")
+	detailsPath := filepath.Join(statusDIR, "containerDetails")
 	file, err = json.MarshalIndent(containerDetails, "", " ")
 	if err != nil {
 		return err

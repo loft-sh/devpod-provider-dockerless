@@ -10,8 +10,8 @@ import (
 )
 
 var checksumMap = map[string]string{
-	"./release/devpod-provider-dockerless-linux-amd64":       "##CHECKSUM_LINUX_AMD64##",
-	"./release/devpod-provider-dockerless-linux-arm64":       "##CHECKSUM_LINUX_ARM64##",
+	"./release/devpod-provider-dockerless-linux-amd64": "##CHECKSUM_LINUX_AMD64##",
+	"./release/devpod-provider-dockerless-linux-arm64": "##CHECKSUM_LINUX_ARM64##",
 }
 
 func main() {

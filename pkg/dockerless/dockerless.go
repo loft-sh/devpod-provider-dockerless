@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 
 	"github.com/loft-sh/devpod-provider-dockerless/pkg/options"
 	"github.com/loft-sh/devpod/pkg/devcontainer/config"
@@ -29,21 +30,21 @@ type DockerlessProvider struct {
 }
 
 func (p *DockerlessProvider) Find(ctx context.Context, workspaceId string) (*config.ContainerDetails, error) {
-	containerDIR := filepath.Join(p.Config.TargetDir, "rootfs", workspaceId)
+	statusDIR := filepath.Join(p.Config.TargetDir, "status", workspaceId)
 
 	// check if the rootfs exists
-	_, err := os.Stat(containerDIR)
+	_, err := os.Stat(statusDIR)
 	if err != nil {
 		return nil, fmt.Errorf("container %s does not exist", workspaceId)
 	}
 
 	// check if the containerDetails exits
-	_, err = os.Stat(containerDIR + "/containerDetails")
+	_, err = os.Stat(statusDIR + "/containerDetails")
 	if err != nil {
 		return nil, fmt.Errorf("container %s does not exist", workspaceId)
 	}
 
-	containerDetailsBytes, err := os.ReadFile(containerDIR + "/containerDetails")
+	containerDetailsBytes, err := os.ReadFile(statusDIR + "/containerDetails")
 	if err != nil {
 		return nil, err
 	}
@@ -74,16 +75,21 @@ func (p *DockerlessProvider) Stop(ctx context.Context, workspaceId string) error
 		return err
 	}
 
-	return exec.Command("kill", "-9", string(pid)).Run()
+	fmt.Println(pid)
+
+	return exec.Command("kill", "-9", strconv.Itoa(pid)).Run()
 }
 
 func (p *DockerlessProvider) Delete(ctx context.Context, workspaceId string) error {
-	err := p.Stop(ctx, workspaceId)
+	p.Stop(ctx, workspaceId)
+
+	containerDIR := filepath.Join(p.Config.TargetDir, "rootfs", workspaceId)
+	statusDIR := filepath.Join(p.Config.TargetDir, "status", workspaceId)
+
+	err := os.RemoveAll(statusDIR)
 	if err != nil {
 		return err
 	}
-
-	containerDIR := filepath.Join(p.Config.TargetDir, "rootfs", workspaceId)
 
 	return os.RemoveAll(containerDIR)
 }

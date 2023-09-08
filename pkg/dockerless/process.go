@@ -15,7 +15,7 @@ func GetPid(id string) (int, error) {
 		os.Args[0] + "\000" +
 			"enter" + "\000" +
 			base64.StdEncoding.EncodeToString([]byte(id)) + "\000",
-		)
+	)
 
 	processes, err := os.ReadDir("/proc")
 	if err != nil {

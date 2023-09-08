@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"syscall"
-	"time"
 
 	"github.com/loft-sh/devpod/pkg/devcontainer/config"
 	"github.com/loft-sh/devpod/pkg/driver"
@@ -16,8 +15,9 @@ import (
 
 func (p *DockerlessProvider) Enter(ctx context.Context, workspaceId string) error {
 	containerDIR := filepath.Join(p.Config.TargetDir, "rootfs", workspaceId)
+	statusDIR := filepath.Join(p.Config.TargetDir, "status", workspaceId)
 
-	runOptionsBytes, err := os.ReadFile(containerDIR + "/runOptions")
+	runOptionsBytes, err := os.ReadFile(statusDIR + "/runOptions")
 	if err != nil {
 		return err
 	}
@@ -90,48 +90,7 @@ func (p *DockerlessProvider) Enter(ctx context.Context, workspaceId string) erro
 	cmd.Dir = "/"
 	cmd.Env = config.ObjectToList(runOptions.Env)
 
-	err = cmd.Start()
-	if err != nil {
-		return err
-	}
-
-	err = setStatus("/", "running")
-	if err != nil {
-		return err
-	}
-
-	cmd.Wait()
-
-	return setStatus("/", "stopped")
-}
-
-func setStatus(containerDIR string, status string) error {
-	containerDetailsBytes, err := os.ReadFile("/containerDetails")
-	if err != nil {
-		return err
-	}
-
-	containerDetails := config.ContainerDetails{}
-
-	err = json.Unmarshal(containerDetailsBytes, &containerDetails)
-	if err != nil {
-		return err
-	}
-
-	containerDetails.State.Status = status
-	containerDetails.State.StartedAt = time.Now().String()
-
-	file, err := json.MarshalIndent(containerDetails, "", " ")
-	if err != nil {
-		return err
-	}
-
-	err = os.WriteFile("/containerDetails", file, 0o644)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return cmd.Run()
 }
 
 func prepareMounts(rootfs string) error {
