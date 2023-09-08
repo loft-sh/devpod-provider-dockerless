@@ -43,10 +43,17 @@ func (p *DockerlessProvider) ExecuteCommand(ctx context.Context, workspaceId, us
 		"-u",
 		"-i",
 		"-p",
-		"-U",
+	}
+
+	// user namespace only if we're rootless
+	if os.Getuid() > 0 {
+		args = append(args, "-U")
+	}
+
+	args = append(args, []string{
 		"-t",
 		string(pid),
-	}
+	}...)
 
 	if user == "" {
 		args = append(args, command)
