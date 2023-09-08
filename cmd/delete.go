@@ -38,10 +38,5 @@ func (cmd *DeleteCmd) Run(ctx context.Context, options *options.Options, log log
 		return err
 	}
 
-	err = dockerlessProvider.Stop(ctx, options.DevContainerID)
-	if err != nil {
-		return err
-	}
-
 	return dockerlessProvider.Delete(ctx, options.DevContainerID)
 }
