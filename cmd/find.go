@@ -53,5 +53,6 @@ func (cmd *FindCmd) Run(ctx context.Context, options *options.Options, log log.L
 	}
 
 	fmt.Println(string(out))
+
 	return nil
 }

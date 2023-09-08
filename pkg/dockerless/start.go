@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -86,8 +85,6 @@ func (p *DockerlessProvider) Start(ctx context.Context, workspaceId string) erro
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
-
-	fmt.Println(cmd.Args)
 
 	err = cmd.Start()
 	if err != nil {

@@ -75,8 +75,6 @@ func (p *DockerlessProvider) Stop(ctx context.Context, workspaceId string) error
 		return err
 	}
 
-	fmt.Println(pid)
-
 	return exec.Command("kill", "-9", strconv.Itoa(pid)).Run()
 }
 
