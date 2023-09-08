@@ -2,8 +2,10 @@ package dockerless
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -45,27 +47,45 @@ func (p *DockerlessProvider) Start(ctx context.Context, workspaceId string) erro
 		return errors.New("unsupported option by the dockerless driver: CapAdd")
 	}
 
-	command := "rootlesskit"
-	args := []string{
-		"--pidns",
-		"--cgroupns",
-		"--utsns",
-		"--ipcns",
-		"--reaper",
-		"true",
-		"--net",
-		"host",
-		"--state-dir",
-		filepath.Join("/tmp", "dockerless", workspaceId),
+	command := ""
+	args := []string{}
+
+	if os.Getuid() > 0 {
+		command = "rootlesskit"
+		args = []string{
+			"--pidns",
+			"--cgroupns",
+			"--utsns",
+			"--ipcns",
+			"--net",
+			"host",
+			"--state-dir",
+			filepath.Join("/tmp", "dockerless", workspaceId),
+		}
+	} else {
+		command = "unshare"
+		args = []string{
+			"-m",
+			"-p",
+			"-u",
+			"-f",
+			"--mount-proc",
+		}
+	}
+
+	args = append(args, []string{
 		os.Args[0],
 		"enter",
-	}
+		base64.StdEncoding.EncodeToString([]byte(workspaceId)),
+	}...)
 
 	cmd := exec.Command(command, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
+
+	fmt.Println(cmd.Args)
 
 	return cmd.Run()
 }

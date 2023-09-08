@@ -29,19 +29,6 @@ func (p *DockerlessProvider) Enter(ctx context.Context, workspaceId string) erro
 		return err
 	}
 
-	args := []string{
-		"--",
-		runOptions.Entrypoint,
-	}
-	args = append(args, runOptions.Cmd...)
-
-	cmd := exec.Command("/usr/bin/env", args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Dir = "/"
-	cmd.Env = config.ObjectToList(runOptions.Env)
-
 	err = prepareMounts(containerDIR)
 	if err != nil {
 		return err
@@ -74,30 +61,52 @@ func (p *DockerlessProvider) Enter(ctx context.Context, workspaceId string) erro
 		return err
 	}
 
-	// Set Namespaces with generated value
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		GidMappingsEnableSetgroups: true,
-		Chroot: containerDIR,
+	err = PivotRoot(containerDIR)
+	if err != nil {
+		return err
 	}
+
+	err = syscall.Chdir("/")
+	if err != nil {
+		return err
+	}
+
+	// then we set up the hostname.
+	err = syscall.Sethostname([]byte(workspaceId))
+	if err != nil {
+		return fmt.Errorf("error setting hostname for namespace: %w", err)
+	}
+
+	args := []string{
+		"--",
+		runOptions.Entrypoint,
+	}
+	args = append(args, runOptions.Cmd...)
+
+	cmd := exec.Command("/usr/bin/env", args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Dir = "/"
+	cmd.Env = config.ObjectToList(runOptions.Env)
 
 	err = cmd.Start()
 	if err != nil {
 		return err
 	}
 
-	err = setStatus(containerDIR, "running")
+	err = setStatus("/", "running")
 	if err != nil {
 		return err
 	}
 
-	// block execution till finished
 	cmd.Wait()
 
-	return setStatus(containerDIR, "stopped")
+	return setStatus("/", "stopped")
 }
 
 func setStatus(containerDIR string, status string) error {
-	containerDetailsBytes, err := os.ReadFile(containerDIR + "/containerDetails")
+	containerDetailsBytes, err := os.ReadFile("/containerDetails")
 	if err != nil {
 		return err
 	}
@@ -117,7 +126,7 @@ func setStatus(containerDIR string, status string) error {
 		return err
 	}
 
-	err = os.WriteFile(containerDIR+"/containerDetails", file, 0o644)
+	err = os.WriteFile("/containerDetails", file, 0o644)
 	if err != nil {
 		return err
 	}
@@ -142,11 +151,6 @@ func prepareMounts(rootfs string) error {
 	}
 
 	err = MountShm(filepath.Join(rootfs, "/dev/shm"))
-	if err != nil {
-		return err
-	}
-
-	err = MountMqueue(filepath.Join(rootfs, "/dev/mqueue"))
 	if err != nil {
 		return err
 	}
@@ -187,6 +191,65 @@ func performMounts(mounts []*config.Mount, rootfs string) error {
 		} else {
 			return fmt.Errorf("Unsupported mount type '%s' in mount '%s'", mount.Type, mount.String())
 		}
+	}
+
+	return nil
+}
+
+// PivotRoot will perform pivot root syscall into path.
+func PivotRoot(path string) error {
+	err := syscall.Mount(path, path, "", syscall.MS_BIND|syscall.MS_REC, "")
+	if err != nil {
+		return fmt.Errorf("error setting private mount: %s. %v", path, err.Error())
+	}
+
+	err = syscall.Mount("", path, "", syscall.MS_PRIVATE|syscall.MS_REC, "")
+	if err != nil {
+		return fmt.Errorf("error setting private mount: %s. %v", path, err.Error())
+	}
+
+	err = syscall.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, "")
+	if err != nil {
+		return fmt.Errorf("error setting private mount: %s. %v", path, err.Error())
+	}
+
+	// first we set up pivotroot.
+	if !Exist(path) {
+		return fmt.Errorf("pivotroot: rootfs %s does not exist", path)
+	}
+
+	tmpDir := filepath.Join(path, "/")
+	pivotDir := filepath.Join(tmpDir, ".pivot_root")
+
+	_ = os.Remove(tmpDir)
+	_ = os.Remove(pivotDir)
+
+	err = os.MkdirAll(tmpDir, 0o755)
+	if err != nil {
+		return fmt.Errorf("pivotroot: can't create tmp dir %s, error %w", tmpDir, err)
+	}
+
+	err = os.Mkdir(pivotDir, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("pivotroot: can't create pivot_root dir %s, error %w", pivotDir, err)
+	}
+
+	err = syscall.PivotRoot(path, pivotDir)
+	if err != nil {
+		return fmt.Errorf("pivotroot: %w", err)
+	}
+
+	// path to pivot dir now changed, update
+	pivotDir = filepath.Join("/", filepath.Base(pivotDir))
+
+	err = syscall.Unmount(pivotDir, syscall.MNT_DETACH)
+	if err != nil {
+		return fmt.Errorf("unmount pivot_root dir %w", err)
+	}
+
+	err = os.Remove(pivotDir)
+	if err != nil {
+		return fmt.Errorf("cleanup pivot_root dir %w", err)
 	}
 
 	return nil

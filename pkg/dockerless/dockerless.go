@@ -4,14 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 
 	"github.com/loft-sh/devpod-provider-dockerless/pkg/options"
 	"github.com/loft-sh/devpod/pkg/devcontainer/config"
-	"github.com/loft-sh/devpod/pkg/driver"
 	"github.com/loft-sh/log"
 )
 
@@ -58,20 +56,9 @@ func (p *DockerlessProvider) Find(ctx context.Context, workspaceId string) (*con
 	}
 
 	status := "stopped"
-	pidPath := filepath.Join("/tmp", "dockerless", workspaceId, "child_pid")
 
-	_, err = os.Stat(pidPath)
-	if err != nil {
-		status = "stopped"
-	}
-
-	pid, err := os.ReadFile(pidPath)
-	if err != nil {
-		status = "stopped"
-	}
-
-	_, err = os.Stat(filepath.Join("/proc", string(pid), "mem"))
-	if err == nil {
+	pid, err := GetPid(workspaceId)
+	if err == nil && pid > 1 {
 		// file exists, pid is running
 		status = "running"
 	}
@@ -82,15 +69,7 @@ func (p *DockerlessProvider) Find(ctx context.Context, workspaceId string) (*con
 }
 
 func (p *DockerlessProvider) Stop(ctx context.Context, workspaceId string) error {
-	pidPath := filepath.Join("/tmp", "dockerless", workspaceId, "child_pid")
-
-	_, err := os.Stat(pidPath)
-	if err != nil {
-		// does not exist, means it's not running
-		return nil
-	}
-
-	pid, err := os.ReadFile(pidPath)
+	pid, err := GetPid(workspaceId)
 	if err != nil {
 		return err
 	}
@@ -107,48 +86,4 @@ func (p *DockerlessProvider) Delete(ctx context.Context, workspaceId string) err
 	containerDIR := filepath.Join(p.Config.TargetDir, "rootfs", workspaceId)
 
 	return os.RemoveAll(containerDIR)
-}
-
-func (p *DockerlessProvider) ExecuteCommand(ctx context.Context, workspaceId, user, command string, stdin io.Reader, stdout, stderr io.Writer) error {
-	runOptions := &driver.RunOptions{}
-
-	err := json.Unmarshal([]byte(os.Getenv("DEVCONTAINER_RUN_OPTIONS")), runOptions)
-	if err != nil {
-		return fmt.Errorf("unmarshal run options: %w", err)
-	}
-
-	pidPath := filepath.Join("/tmp", "dockerless", workspaceId, "child_pid")
-	containerDIR := filepath.Join(p.Config.TargetDir, "rootfs", workspaceId)
-
-	_, err = os.Stat(pidPath)
-	if err != nil {
-		// does not exist, means it's not running
-		return fmt.Errorf("container %s is not running", workspaceId)
-	}
-
-	pid, err := os.ReadFile(pidPath)
-	if err != nil {
-		return err
-	}
-
-	nsenter := "nsenter"
-	args := []string{
-		"-m",
-		"-u",
-		"-i",
-		"-p",
-		"-U",
-		"-r" + containerDIR,
-		"-w" + containerDIR,
-		"-t",
-		string(pid),
-		command,
-	}
-
-	cmd := exec.Command(nsenter, args...)
-	cmd.Stdin = stdin
-	cmd.Stdout = stdout
-	cmd.Stderr = stderr
-
-	return cmd.Run()
 }
