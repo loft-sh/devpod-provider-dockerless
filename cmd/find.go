@@ -42,8 +42,10 @@ func (cmd *FindCmd) Run(ctx context.Context, options *options.Options, log log.L
 
 	containerDetails, err := dockerlessProvider.Find(ctx, options.DevContainerID)
 	if err != nil {
-		return err
-	} else if containerDetails == nil {
+		log.Error(err)
+	}
+
+	if containerDetails == nil {
 		return nil
 	}
 
