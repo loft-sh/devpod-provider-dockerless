@@ -89,5 +89,36 @@ func (p *DockerlessProvider) Delete(ctx context.Context, workspaceId string) err
 		return err
 	}
 
-	return os.RemoveAll(containerDIR)
+	command := ""
+	args := []string{}
+
+	if os.Getuid() > 0 {
+		command = "rootlesskit"
+		args = []string{
+			"--pidns",
+			"--cgroupns",
+			"--utsns",
+			"--ipcns",
+			"--net",
+			"host",
+			"--state-dir",
+			filepath.Join("/tmp", "dockerless", workspaceId),
+		}
+	} else {
+		command = "unshare"
+		args = []string{
+			"-m",
+			"-p",
+			"-u",
+			"-f",
+			"--mount-proc",
+		}
+	}
+
+	args = append(args, []string{
+		"rm", "-rf", containerDIR,
+	}...)
+
+	cmd := exec.Command(command, args...)
+	return cmd.Run()
 }

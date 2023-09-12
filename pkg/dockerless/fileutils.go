@@ -20,7 +20,7 @@ func UntarFile(path string, target string) error {
 		return err
 	}
 
-	cmd := exec.Command("tar", "--exclude=dev/*", "-xf", path, "-C", target)
+	cmd := exec.Command("tar", "--exclude=dev/*", "-xpf", path, "-C", target)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {

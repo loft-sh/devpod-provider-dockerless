@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/loft-sh/devpod/pkg/driver"
+	"github.com/schollz/progressbar/v3"
 )
 
 // Pull will pull a given image and save it to ImageDir.
@@ -173,7 +174,20 @@ func downloadLayer(targetDIR string, layer v1.Layer) (string, error) {
 		return "", err
 	}
 
-	_, err = io.Copy(savedLayer, tarLayer)
+	layerSize, err := layer.Size()
+	if err != nil {
+		return "", err
+	}
+
+	bar := progressbar.NewOptions64(layerSize,
+		progressbar.OptionEnableColorCodes(true),
+		progressbar.OptionShowBytes(true),
+		progressbar.OptionSetWidth(30),
+		progressbar.OptionSetVisibility(true),
+		progressbar.OptionSetDescription("Copying blob "+layerDigest.String()),
+	)
+
+	_, err = io.Copy(io.MultiWriter(savedLayer, bar), tarLayer)
 	if err != nil {
 		return "", err
 	}

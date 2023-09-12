@@ -3,7 +3,6 @@ package dockerless
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -12,18 +11,9 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/loft-sh/devpod/pkg/driver"
 )
 
 func (p *DockerlessProvider) ExecuteCommand(ctx context.Context, workspaceId, user, command string, stdin io.Reader, stdout, stderr io.Writer) error {
-	runOptions := &driver.RunOptions{}
-
-	err := json.Unmarshal([]byte(os.Getenv("DEVCONTAINER_RUN_OPTIONS")), runOptions)
-	if err != nil {
-		return fmt.Errorf("unmarshal run options: %w", err)
-	}
-
 	ppid, err := GetPid(workspaceId)
 	if err != nil {
 		return fmt.Errorf("container %s is not running", workspaceId)
@@ -48,6 +38,7 @@ func (p *DockerlessProvider) ExecuteCommand(ctx context.Context, workspaceId, us
 	// user namespace only if we're rootless
 	if os.Getuid() > 0 {
 		args = append(args, "-U")
+		args = append(args, "--preserve-credentials")
 	}
 
 	args = append(args, []string{
@@ -61,19 +52,18 @@ func (p *DockerlessProvider) ExecuteCommand(ctx context.Context, workspaceId, us
 		containerDIR := filepath.Join(p.Config.TargetDir, "rootfs", workspaceId)
 		uid := findUserPasswd(containerDIR, user)
 
-		args = append(args, []string{"su", uid, "-c", command}...)
+		args = append(args, []string{"su", "-l", uid, "-c", command}...)
 	}
 
 	cmd := exec.Command(nsenter, args...)
-	cmd.Stdin = stdin
-	cmd.Stdout = stdout
-	cmd.Stderr = stderr
-
 	environB, err := os.ReadFile(filepath.Join("/proc", string(pid), "environ"))
 	if err == nil {
 		environ := strings.Split(string(environB), "\000")
 		cmd.Env = environ
 	}
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
 }

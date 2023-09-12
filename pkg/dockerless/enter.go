@@ -144,8 +144,12 @@ func performMounts(mounts []*config.Mount, rootfs string) error {
 				defer func() { _ = file.Close() }()
 			}
 
-			return MountBind(mount.Source,
+			err = MountBind(mount.Source,
 				filepath.Join(rootfs, mount.Target))
+
+			if err != nil {
+				return err
+			}
 
 		} else {
 			return fmt.Errorf("Unsupported mount type '%s' in mount '%s'", mount.Type, mount.String())

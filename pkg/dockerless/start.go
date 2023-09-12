@@ -4,13 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"time"
 
-	"github.com/loft-sh/devpod/pkg/devcontainer/config"
 	"github.com/loft-sh/devpod/pkg/driver"
 )
 
@@ -41,11 +38,11 @@ func (p *DockerlessProvider) Start(ctx context.Context, workspaceId string) erro
 
 	// fail early for unsupported options
 	if len(runOptions.SecurityOpt) > 0 {
-		return errors.New("unsupported option by the dockerless driver: SecurityOpt")
+		p.Log.Warn("unsupported option by the dockerless driver: SecurityOpt")
 	}
 
 	if len(runOptions.CapAdd) > 0 {
-		return errors.New("unsupported option by the dockerless driver: CapAdd")
+		p.Log.Warn("unsupported option by the dockerless driver: CapAdd")
 	}
 
 	command := ""
@@ -81,9 +78,6 @@ func (p *DockerlessProvider) Start(ctx context.Context, workspaceId string) erro
 	}...)
 
 	cmd := exec.Command(command, args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
 
 	err = cmd.Start()
@@ -91,41 +85,5 @@ func (p *DockerlessProvider) Start(ctx context.Context, workspaceId string) erro
 		return err
 	}
 
-	err = setStatus(statusDIR, "running")
-	if err != nil {
-		return err
-	}
-
-	cmd.Wait()
-
-	return setStatus(statusDIR, "stopped")
-}
-
-func setStatus(statusDIR string, status string) error {
-	containerDetailsBytes, err := os.ReadFile(statusDIR + "/containerDetails")
-	if err != nil {
-		return err
-	}
-
-	containerDetails := config.ContainerDetails{}
-
-	err = json.Unmarshal(containerDetailsBytes, &containerDetails)
-	if err != nil {
-		return err
-	}
-
-	containerDetails.State.Status = status
-	containerDetails.State.StartedAt = time.Now().String()
-
-	file, err := json.MarshalIndent(containerDetails, "", " ")
-	if err != nil {
-		return err
-	}
-
-	err = os.WriteFile(statusDIR+"/containerDetails", file, 0o644)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return cmd.Process.Release()
 }

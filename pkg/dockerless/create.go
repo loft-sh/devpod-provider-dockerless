@@ -77,8 +77,12 @@ func (p *DockerlessProvider) Create(ctx context.Context, workspaceId string, run
 		return err
 	}
 
-	for _, layer := range manifest.Layers {
+	p.Log.Info("preparing container rootfs")
+
+	for index, layer := range manifest.Layers {
 		layerDigest := strings.Split(layer.Digest.String(), ":")[1] + ".tar.gz"
+
+		p.Log.Infof("unpacking layer %d of %d", index+1, len(manifest.Layers))
 
 		err = UntarFile(
 			filepath.Join(imageDir, layerDigest),
@@ -88,6 +92,10 @@ func (p *DockerlessProvider) Create(ctx context.Context, workspaceId string, run
 			return err
 		}
 	}
+
+	p.Log.Info("done")
+
+	p.Log.Info("preparing runoptions")
 
 	if runOptions.Env == nil {
 		runOptions.Env = make(map[string]string)
@@ -133,6 +141,8 @@ func (p *DockerlessProvider) Create(ctx context.Context, workspaceId string, run
 	if err != nil {
 		return err
 	}
+
+	p.Log.Info("done")
 
 	return nil
 }
