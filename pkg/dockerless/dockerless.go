@@ -70,15 +70,21 @@ func (p *DockerlessProvider) Find(ctx context.Context, workspaceId string) (*con
 }
 
 func (p *DockerlessProvider) Stop(ctx context.Context, workspaceId string) error {
+	p.Log.Infof("stopping: %s", workspaceId)
+
 	pid, err := GetPid(workspaceId)
 	if err != nil {
 		return err
 	}
 
+	p.Log.Debugf("found parent process: %d", pid)
+
 	return exec.Command("kill", "-9", strconv.Itoa(pid)).Run()
 }
 
 func (p *DockerlessProvider) Delete(ctx context.Context, workspaceId string) error {
+	p.Log.Infof("deleting: %s", workspaceId)
+
 	p.Stop(ctx, workspaceId)
 
 	containerDIR := filepath.Join(p.Config.TargetDir, "rootfs", workspaceId)

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/loft-sh/devpod/pkg/driver"
 )
@@ -16,13 +17,13 @@ func (p *DockerlessProvider) Start(ctx context.Context, workspaceId string) erro
 
 	// return early if the container is already running
 	containerDetails, err := p.Find(ctx, workspaceId)
-	if err != nil {
-		return err
-	}
-
-	if containerDetails.State.Status == "running" {
+	if err == nil && containerDetails.State.Status == "running" {
 		return nil
 	}
+
+	p.Log.Debugf("container %s is not running, starting", workspaceId)
+
+	p.Log.Debugf("retrieving runOptions")
 
 	runOptionsBytes, err := os.ReadFile(statusDIR + "/runOptions")
 	if err != nil {
@@ -79,6 +80,10 @@ func (p *DockerlessProvider) Start(ctx context.Context, workspaceId string) erro
 
 	cmd := exec.Command(command, args...)
 	cmd.Env = os.Environ()
+
+	p.Log.Infof("starting the container")
+
+	p.Log.Debugf("executing helper command: %s %s", command, strings.Join(args, " "))
 
 	err = cmd.Start()
 	if err != nil {

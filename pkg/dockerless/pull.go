@@ -13,7 +13,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/loft-sh/devpod/pkg/driver"
-	"github.com/schollz/progressbar/v3"
 )
 
 // Pull will pull a given image and save it to ImageDir.
@@ -31,12 +30,16 @@ func (p *DockerlessProvider) Pull(ctx context.Context, runOptions *driver.RunOpt
 
 	targetDIR := filepath.Join(p.Config.TargetDir, "images", ref.Name())
 
+	p.Log.Infof("downloading %s", ref.Name())
 	// if we already downloaded the image, exit
 	_, err = os.Stat(filepath.Join(targetDIR, "manifest.json"))
 	if err == nil {
+		p.Log.Infof("image %s already found", ref.Name())
+
 		return nil
 	}
 
+	p.Log.Debugf("getting info about %s", ref.Name())
 	// Pull will just get us the v1.Image struct, from
 	// which we get all the information we need
 	imageManifest, err := crane.Pull(image)
@@ -44,6 +47,7 @@ func (p *DockerlessProvider) Pull(ctx context.Context, runOptions *driver.RunOpt
 		return err
 	}
 
+	p.Log.Debugf("preparing to get layers")
 	// We get the layers
 	layers, err := imageManifest.Layers()
 	if err != nil {
@@ -58,9 +62,12 @@ func (p *DockerlessProvider) Pull(ctx context.Context, runOptions *driver.RunOpt
 		}
 	}
 
+	p.Log.Infof("downloading layers")
 	keepFiles := []string{}
 	// Now we download the layers
-	for _, layer := range layers {
+	for index, layer := range layers {
+		p.Log.Infof("downloading layer %d of %d", index+1, len(layers))
+
 		fileName, err := downloadLayer(targetDIR, layer)
 		if err != nil {
 			return err
@@ -74,6 +81,7 @@ func (p *DockerlessProvider) Pull(ctx context.Context, runOptions *driver.RunOpt
 		return err
 	}
 
+	p.Log.Debugf("cleaning up image dir")
 	for _, file := range fileList {
 		if !strings.Contains(
 			strings.Join(keepFiles, ":"),
@@ -86,6 +94,7 @@ func (p *DockerlessProvider) Pull(ctx context.Context, runOptions *driver.RunOpt
 		}
 	}
 
+	p.Log.Debugf("saving manifest.json")
 	// we save the manifest.json for later use. This contains
 	// the information on how the layers are ordered and
 	// how to unpack them
@@ -99,6 +108,7 @@ func (p *DockerlessProvider) Pull(ctx context.Context, runOptions *driver.RunOpt
 		return err
 	}
 
+	p.Log.Debugf("saving config.json")
 	// The config.json file is also saved, indicating lots of information
 	// about the image, like default env, entrypoint and so on
 	rawConfig, err := imageManifest.RawConfigFile()
@@ -111,6 +121,7 @@ func (p *DockerlessProvider) Pull(ctx context.Context, runOptions *driver.RunOpt
 		return err
 	}
 
+	p.Log.Debugf("saving image info")
 	// We also save the fully qualified name to retrieve it later
 	err = os.WriteFile(filepath.Join(targetDIR, "image_name"), []byte(image), 0o644)
 	if err != nil {
@@ -174,20 +185,7 @@ func downloadLayer(targetDIR string, layer v1.Layer) (string, error) {
 		return "", err
 	}
 
-	layerSize, err := layer.Size()
-	if err != nil {
-		return "", err
-	}
-
-	bar := progressbar.NewOptions64(layerSize,
-		progressbar.OptionEnableColorCodes(true),
-		progressbar.OptionShowBytes(true),
-		progressbar.OptionSetWidth(30),
-		progressbar.OptionSetVisibility(true),
-		progressbar.OptionSetDescription("Copying blob "+layerDigest.String()),
-	)
-
-	_, err = io.Copy(io.MultiWriter(savedLayer, bar), tarLayer)
+	_, err = io.Copy(savedLayer, tarLayer)
 	if err != nil {
 		return "", err
 	}
