@@ -33,20 +33,7 @@ Needed variables will be:
 
 You only need to specify where you want all of the `dockerless` data will be stored.
 
-Inside the folder the provider will automatically create the working tree like so:
-
-- TARGET_DIR/
-    - images
-        - index.docker.io/...
-    - rootfs
-        - container-id-/
-            - /etc
-            - /home
-            ...
-    - status
-       - container-id-/
-        - containerDetails
-        - runOptions
+## Run it
 
 After the initial setup, just use:
 
