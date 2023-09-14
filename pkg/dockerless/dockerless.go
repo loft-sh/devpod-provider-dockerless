@@ -85,7 +85,7 @@ func (p *DockerlessProvider) Stop(ctx context.Context, workspaceId string) error
 func (p *DockerlessProvider) Delete(ctx context.Context, workspaceId string) error {
 	p.Log.Infof("deleting: %s", workspaceId)
 
-	p.Stop(ctx, workspaceId)
+	_ = p.Stop(ctx, workspaceId)
 
 	containerDIR := filepath.Join(p.Config.TargetDir, "rootfs", workspaceId)
 	statusDIR := filepath.Join(p.Config.TargetDir, "status", workspaceId)
@@ -96,7 +96,7 @@ func (p *DockerlessProvider) Delete(ctx context.Context, workspaceId string) err
 	}
 
 	command := ""
-	args := []string{}
+	var args []string
 
 	if os.Getuid() > 0 {
 		command = "rootlesskit"

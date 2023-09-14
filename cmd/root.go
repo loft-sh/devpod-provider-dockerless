@@ -36,11 +36,9 @@ func Execute() {
 	// execute command
 	err := rootCmd.Execute()
 	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			os.Exit(exitErr.ExitCode())
-		}
-
-		if exitErr, ok := err.(*exec.ExitError); ok {
+		//nolint: errorlint
+		exitErr, ok := err.(*exec.ExitError)
+		if ok {
 			if len(exitErr.Stderr) > 0 {
 				log.Default.ErrorStreamOnly().Error(string(exitErr.Stderr))
 			}

@@ -150,9 +150,8 @@ func performMounts(mounts []*config.Mount, rootfs string) error {
 			if err != nil {
 				return err
 			}
-
 		} else {
-			return fmt.Errorf("Unsupported mount type '%s' in mount '%s'", mount.Type, mount.String())
+			return fmt.Errorf("unsupported mount type '%s' in mount '%s'", mount.Type, mount.String())
 		}
 	}
 

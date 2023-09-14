@@ -29,7 +29,7 @@ func (p *DockerlessProvider) Create(ctx context.Context, workspaceId string, run
 		image = ref.Name()
 	}
 
-	imageDir := filepath.Join(p.Config.TargetDir, "images", ref.Name())
+	imageDir := filepath.Join(p.Config.TargetDir, "images", image)
 	containerDIR := filepath.Join(p.Config.TargetDir, "rootfs", workspaceId)
 	statusDIR := filepath.Join(p.Config.TargetDir, "status", workspaceId)
 

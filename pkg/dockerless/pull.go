@@ -159,7 +159,6 @@ func downloadLayer(targetDIR string, layer v1.Layer) (string, error) {
 	// If a layer already exists, exit
 	if Exist(filepath.Join(targetDIR, layerFileName)) &&
 		CheckFileDigest(filepath.Join(targetDIR, layerFileName), layerDigest.String()) {
-
 		return layerFileName, nil
 	}
 
@@ -168,7 +167,6 @@ func downloadLayer(targetDIR string, layer v1.Layer) (string, error) {
 	matchingLayers := findExistingLayer(filepath.Dir(targetDIR), layerFileName)
 	if len(matchingLayers) > 0 &&
 		CheckFileDigest(matchingLayers[0], layerDigest.String()) {
-
 		return layerFileName, os.Link(matchingLayers[0], filepath.Join(targetDIR, layerFileName))
 	}
 

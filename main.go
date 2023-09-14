@@ -9,6 +9,7 @@ import (
 	"github.com/loft-sh/devpod-provider-dockerless/cmd"
 )
 
+//nolint: typecheck
 //go:embed rootlesskit
 var rootlesskit []byte
 var rootlesskitPath = filepath.Join("/tmp/dockerless", "rootlesskit")

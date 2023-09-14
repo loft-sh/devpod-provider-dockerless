@@ -47,7 +47,7 @@ func (p *DockerlessProvider) Start(ctx context.Context, workspaceId string) erro
 	}
 
 	command := ""
-	args := []string{}
+	var args []string
 
 	if os.Getuid() > 0 {
 		command = "rootlesskit"
