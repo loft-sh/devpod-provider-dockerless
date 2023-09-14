@@ -31,7 +31,9 @@ Needed variables will be:
 
 `TARGET_DIR` is where all the images, containers and state are stored.
 
-The following scheme will be used:
+You only need to specify where you want all of the `dockerless` data will be stored.
+
+Inside the folder the provider will automatically create the working tree like so:
 
 - TARGET_DIR/
     - images
