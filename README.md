@@ -3,9 +3,9 @@
 Dockerless provider is useful for situations where you don't have Docker or Podman
 installed, you're on Linux, and you still want to use Devcontainers.
 
-Dockerless provider will use (RootlessKit)[https://github.com/rootless-containers/rootlesskit] for
+Dockerless provider will use [RootlessKit](https://github.com/rootless-containers/rootlesskit) for
 rootless containers (and `unshare` in case you're already root) to create namespaces.
-It will use (Crane)[https://github.com/google/go-containerregistry/#crane] to pull and manage images.
+It will use [Crane](https://github.com/google/go-containerregistry/#crane) to pull and manage images.
 
 All dependencies are self-contained in the provider binary.
 
