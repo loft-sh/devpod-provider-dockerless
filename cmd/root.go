@@ -6,6 +6,7 @@ import (
 
 	"github.com/loft-sh/devpod-provider-dockerless/pkg/version"
 	"github.com/loft-sh/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -18,6 +19,10 @@ func NewRootCmd() *cobra.Command {
 		SilenceUsage:  true,
 
 		PersistentPreRunE: func(cobraCmd *cobra.Command, args []string) error {
+			if os.Getenv("DEVPOD_DEBUG") == "true" {
+				log.Default.SetLevel(logrus.DebugLevel)
+			}
+
 			log.Default.MakeRaw()
 
 			return nil
