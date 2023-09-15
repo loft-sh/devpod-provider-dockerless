@@ -25,7 +25,7 @@ func NewCommandCmd() *cobra.Command {
 				return err
 			}
 
-			return cmd.Run(context.Background(), options, log.Default.ErrorStreamOnly())
+			return cmd.Run(context.Background(), options, log.Default)
 		},
 	}
 
