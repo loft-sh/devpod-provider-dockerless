@@ -85,6 +85,7 @@ func (p *DockerlessProvider) Create(ctx context.Context, workspaceId string, run
 		p.Log.Debugf("unpacking layer %d of %d", index+1, len(manifest.Layers))
 
 		err = UntarFile(
+			workspaceId,
 			filepath.Join(imageDir, layerDigest),
 			containerDIR,
 		)

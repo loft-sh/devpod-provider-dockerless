@@ -27,8 +27,6 @@ func (p *DockerlessProvider) ExecuteCommand(ctx context.Context, workspaceId, us
 
 	pid = bytes.TrimSpace(pid)
 
-	p.Log.Debugf("found process %s", string(pid))
-
 	nsenter := "nsenter"
 	args := []string{
 		"-m",
@@ -56,8 +54,6 @@ func (p *DockerlessProvider) ExecuteCommand(ctx context.Context, workspaceId, us
 
 		args = append(args, []string{"su", "-l", uid, "-c", command}...)
 	}
-
-	p.Log.Debugf("executing: %s %s", nsenter, strings.Join(args, " "))
 
 	cmd := exec.Command(nsenter, args...)
 	environB, err := os.ReadFile(filepath.Join("/proc", string(pid), "environ"))

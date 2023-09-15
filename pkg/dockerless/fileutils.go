@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 )
 
@@ -13,14 +14,45 @@ import (
 // If userns is specified and it is keep-id, it will perform the
 // untarring in a new user namespace with user id maps set, in order to prevent
 // permission errors.
-func UntarFile(path string, target string) error {
+func UntarFile(workspaceId, path, target string) error {
 	// first ensure we can write
 	err := syscall.Access(path, 2)
 	if err != nil {
 		return err
 	}
 
-	cmd := exec.Command("tar", "--exclude=dev/*", "-xpf", path, "-C", target)
+	command := ""
+	var args []string
+
+	if os.Getuid() > 0 {
+		command = "rootlesskit"
+		args = []string{
+			"--pidns",
+			"--cgroupns",
+			"--utsns",
+			"--ipcns",
+			"--net",
+			"host",
+			"--state-dir",
+			filepath.Join("/tmp", "dockerless", workspaceId),
+		}
+	} else {
+		command = "unshare"
+		args = []string{
+			"-m",
+			"-p",
+			"-u",
+			"-f",
+			"--mount-proc",
+		}
+	}
+
+	args = append(args, []string{
+		"tar", "--exclude=dev/*", "-xpf", path, "-C", target,
+	}...,
+	)
+
+	cmd := exec.Command(command, args...)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
