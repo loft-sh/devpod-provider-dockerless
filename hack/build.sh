@@ -62,7 +62,7 @@ for OS in ${PROVIDER_BUILD_PLATFORMS[@]}; do
 			wget -c "https://github.com/rootless-containers/rootlesskit/releases/download/v${ROOTLESSKIT_VERSION}/rootlesskit-aarch64.tar.gz"
 		    tar -zxvf rootlesskit-aarch64.tar.gz rootlesskit
 		fi
-		GOARCH=${ARCH} GOOS=${OS} ${GO_BUILD_CMD} -ldflags "${GO_BUILD_LDFLAGS}" \
+		CGO_ENABLED=0 GOARCH=${ARCH} GOOS=${OS} ${GO_BUILD_CMD} -ldflags "${GO_BUILD_LDFLAGS}" \
 			-o  "${PROVIDER_ROOT}/release/${NAME}" main.go
 		shasum -a 256 "${PROVIDER_ROOT}/release/${NAME}" | cut -d ' ' -f 1 > "${PROVIDER_ROOT}/release/${NAME}".sha256
 	done
