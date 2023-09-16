@@ -3,6 +3,7 @@ package dockerless
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
@@ -14,6 +15,8 @@ import (
 )
 
 func (p *DockerlessProvider) ExecuteCommand(ctx context.Context, workspaceId, user, command string, stdin io.Reader, stdout, stderr io.Writer) error {
+	containerDIR := filepath.Join(p.Config.TargetDir, "rootfs", workspaceId)
+
 	ppid, err := GetPid(workspaceId)
 	if err != nil {
 		return fmt.Errorf("container %s is not running", workspaceId)
@@ -44,23 +47,21 @@ func (p *DockerlessProvider) ExecuteCommand(ctx context.Context, workspaceId, us
 	args = append(args, []string{
 		"-t",
 		string(pid),
+		os.Args[0],
+		"enter",
+		"--entrypoint",
 	}...)
 
-	if user == "" {
-		args = append(args, command)
-	} else {
-		containerDIR := filepath.Join(p.Config.TargetDir, "rootfs", workspaceId)
+	if user != "" && user != "0" && user != "root" {
 		uid := findUserPasswd(containerDIR, user)
-
-		args = append(args, []string{"su", "-l", uid, "-c", command}...)
+		command = "su -l " + uid + " -c " + command
 	}
+
+	command = base64.StdEncoding.EncodeToString([]byte(command))
+
+	args = append(args, command)
 
 	cmd := exec.Command(nsenter, args...)
-	environB, err := os.ReadFile(filepath.Join("/proc", string(pid), "environ"))
-	if err == nil {
-		environ := strings.Split(string(environB), "\000")
-		cmd.Env = environ
-	}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
