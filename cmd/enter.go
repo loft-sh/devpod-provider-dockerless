@@ -10,7 +10,9 @@ import (
 )
 
 // EnterCmd holds the cmd flags
-type EnterCmd struct{}
+type EnterCmd struct{
+	Command string
+}
 
 // NewEnterCmd defines a command
 func NewEnterCmd() *cobra.Command {
@@ -28,6 +30,8 @@ func NewEnterCmd() *cobra.Command {
 		},
 	}
 
+	enterCmd.Flags().StringVar(&cmd.Command, "entrypoint", "", "command to execute")
+
 	return enterCmd
 }
 
@@ -38,5 +42,5 @@ func (cmd *EnterCmd) Run(ctx context.Context, options *options.Options, log log.
 		return err
 	}
 
-	return dockerlessProvider.Enter(ctx, options.DevContainerID)
+	return dockerlessProvider.Enter(ctx, options.DevContainerID, cmd.Command)
 }
