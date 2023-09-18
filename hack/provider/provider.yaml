@@ -11,6 +11,8 @@ options:
 agent:
   containerInactivityTimeout: ${INACTIVITY_TIMEOUT}
   local: true
+  docker:
+    install: false
   binaries:
     DOCKERLESS_PROVIDER:
       - os: linux

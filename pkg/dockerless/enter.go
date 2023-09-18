@@ -61,12 +61,7 @@ func (p *DockerlessProvider) Enter(ctx context.Context, workspaceId string) erro
 		return err
 	}
 
-	err = PivotRoot(containerDIR)
-	if err != nil {
-		return err
-	}
-
-	err = syscall.Chdir("/")
+	err = syscall.Chdir(containerDIR)
 	if err != nil {
 		return err
 	}
@@ -77,28 +72,23 @@ func (p *DockerlessProvider) Enter(ctx context.Context, workspaceId string) erro
 		return fmt.Errorf("error setting hostname for namespace: %w", err)
 	}
 
-	args := []string{
-		"--",
-		runOptions.Entrypoint,
-	}
-	args = append(args, runOptions.Cmd...)
-
-	cmd := exec.Command("/usr/bin/env", args...)
+	cmd := exec.Command(runOptions.Entrypoint, runOptions.Cmd...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Dir = "/"
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Chroot: containerDIR,
+	}
 	cmd.Env = config.ObjectToList(runOptions.Env)
 
 	return cmd.Run()
 }
 
 func prepareMounts(rootfs string) error {
-	err := MountProc(filepath.Join(rootfs, "/proc"))
+	err := MountBind("/proc", filepath.Join(rootfs, "/proc"))
 	if err != nil {
 		return err
 	}
-
 	err = MountTmpfs(filepath.Join(rootfs, "/tmp"))
 	if err != nil {
 		return err

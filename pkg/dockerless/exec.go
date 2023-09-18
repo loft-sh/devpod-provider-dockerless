@@ -14,6 +14,8 @@ import (
 )
 
 func (p *DockerlessProvider) ExecuteCommand(ctx context.Context, workspaceId, user, command string, stdin io.Reader, stdout, stderr io.Writer) error {
+	containerDIR := filepath.Join(p.Config.TargetDir, "rootfs", workspaceId)
+
 	ppid, err := GetPid(workspaceId)
 	if err != nil {
 		return fmt.Errorf("container %s is not running", workspaceId)
@@ -33,8 +35,14 @@ func (p *DockerlessProvider) ExecuteCommand(ctx context.Context, workspaceId, us
 		"-u",
 		"-i",
 		"-p",
+		"-r/proc/" + string(pid) + "/root",
+		"-w/proc/" + string(pid) + "/root",
 	}
 
+	_, err = os.Stat("/dev/net/tun")
+	if err == nil {
+		args = append(args, "-n")
+	}
 	// user namespace only if we're rootless
 	if os.Getuid() > 0 {
 		args = append(args, "-U")
@@ -44,23 +52,19 @@ func (p *DockerlessProvider) ExecuteCommand(ctx context.Context, workspaceId, us
 	args = append(args, []string{
 		"-t",
 		string(pid),
+		"sh",
+		"-l",
+		"-c",
 	}...)
 
-	if user == "" {
-		args = append(args, command)
-	} else {
-		containerDIR := filepath.Join(p.Config.TargetDir, "rootfs", workspaceId)
+	if user != "" && user != "0" && user != "root" {
 		uid := findUserPasswd(containerDIR, user)
-
-		args = append(args, []string{"su", "-l", uid, "-c", command}...)
+		command = "su -l " + uid + " -c " + command
 	}
+
+	args = append(args, command)
 
 	cmd := exec.Command(nsenter, args...)
-	environB, err := os.ReadFile(filepath.Join("/proc", string(pid), "environ"))
-	if err == nil {
-		environ := strings.Split(string(environB), "\000")
-		cmd.Env = environ
-	}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

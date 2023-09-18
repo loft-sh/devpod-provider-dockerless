@@ -56,11 +56,24 @@ func (p *DockerlessProvider) Start(ctx context.Context, workspaceId string) erro
 			"--cgroupns",
 			"--utsns",
 			"--ipcns",
-			"--net",
-			"host",
 			"--state-dir",
 			filepath.Join("/tmp", "dockerless", workspaceId),
 		}
+
+		// Default to use slip4netns if we have /dev/net/tun access
+		_, err = os.Stat("/dev/net/tun")
+		if err == nil {
+			args = append(args, []string{
+				"--net",
+				"slirp4netns",
+				"--port-driver",
+				"slirp4netns",
+				"--disable-host-loopback",
+				"--copy-up",
+				"/etc",
+			}...)
+		}
+
 	} else {
 		command = "unshare"
 		args = []string{

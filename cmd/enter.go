@@ -10,7 +10,8 @@ import (
 )
 
 // EnterCmd holds the cmd flags
-type EnterCmd struct{}
+type EnterCmd struct{
+}
 
 // NewEnterCmd defines a command
 func NewEnterCmd() *cobra.Command {
