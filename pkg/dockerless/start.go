@@ -73,7 +73,6 @@ func (p *DockerlessProvider) Start(ctx context.Context, workspaceId string) erro
 				"/etc",
 			}...)
 		}
-
 	} else {
 		command = "unshare"
 		args = []string{
