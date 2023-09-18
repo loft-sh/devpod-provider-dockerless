@@ -3,7 +3,6 @@ package dockerless
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
@@ -36,8 +35,14 @@ func (p *DockerlessProvider) ExecuteCommand(ctx context.Context, workspaceId, us
 		"-u",
 		"-i",
 		"-p",
+		"-r/proc/" + string(pid) + "/root",
+		"-w/proc/" + string(pid) + "/root",
 	}
 
+	_, err = os.Stat("/dev/net/tun")
+	if err == nil {
+		args = append(args, "-n")
+	}
 	// user namespace only if we're rootless
 	if os.Getuid() > 0 {
 		args = append(args, "-U")
@@ -47,17 +52,15 @@ func (p *DockerlessProvider) ExecuteCommand(ctx context.Context, workspaceId, us
 	args = append(args, []string{
 		"-t",
 		string(pid),
-		os.Args[0],
-		"enter",
-		"--entrypoint",
+		"sh",
+		"-l",
+		"-c",
 	}...)
 
 	if user != "" && user != "0" && user != "root" {
 		uid := findUserPasswd(containerDIR, user)
 		command = "su -l " + uid + " -c " + command
 	}
-
-	command = base64.StdEncoding.EncodeToString([]byte(command))
 
 	args = append(args, command)
 

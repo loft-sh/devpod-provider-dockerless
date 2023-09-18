@@ -40,3 +40,15 @@ After the initial setup, just use:
 ```sh
 devpod up .
 ```
+
+## Run in a container
+
+To run in a container, we need CAP_SYS_ADMIN (needed for the unshare, mount and pivot_root syscalls)
+To have custom networking we also need access to /dev/net/tun
+
+We DO NOT require root
+A nice way to run it is:
+
+`docker run --rm -ti --cap-add CAP_SYS_ADMIN --device /dev/net/tun --user 1000:1000 build-alpine:latest`
+
+Using the image in the `image` folder.

@@ -10,6 +10,7 @@ DATE=$(date "+%Y-%m-%d")
 BUILD_PLATFORM=$(uname -a | awk '{print tolower($1);}')
 
 ROOTLESSKIT_VERSION="1.1.1"
+SLIRP4NETNS_VERSION="1.2.2"
 
 echo "Current working directory is $(pwd)"
 echo "PATH is $PATH"
@@ -56,11 +57,17 @@ for OS in ${PROVIDER_BUILD_PLATFORMS[@]}; do
 
 		echo "Building for ${OS}/${ARCH}"
 		if [[ ${ARCH} == "amd64"   ]]; then
+			rm -f rootlesskit slirp4netns
 			wget -c "https://github.com/rootless-containers/rootlesskit/releases/download/v${ROOTLESSKIT_VERSION}/rootlesskit-x86_64.tar.gz"
 		    tar -zxvf rootlesskit-x86_64.tar.gz rootlesskit
+		    wget -c "https://github.com/rootless-containers/slirp4netns/releases/download/v${SLIRP4NETNS_VERSION}/slirp4netns-x86_64" -O slirp4netns
+		    chmod +x slirp4netns
 		elif [[ ${ARCH} == "arm64" ]]; then
+			rm -f rootlesskit slirp4netns
 			wget -c "https://github.com/rootless-containers/rootlesskit/releases/download/v${ROOTLESSKIT_VERSION}/rootlesskit-aarch64.tar.gz"
 		    tar -zxvf rootlesskit-aarch64.tar.gz rootlesskit
+		    wget -c "https://github.com/rootless-containers/slirp4netns/releases/download/v${SLIRP4NETNS_VERSION}/slirp4netns-aarch64" -O slirp4netns
+		    chmod +x slirp4netns
 		fi
 		CGO_ENABLED=0 GOARCH=${ARCH} GOOS=${OS} ${GO_BUILD_CMD} -ldflags "${GO_BUILD_LDFLAGS}" \
 			-o  "${PROVIDER_ROOT}/release/${NAME}" main.go

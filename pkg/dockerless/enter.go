@@ -2,7 +2,6 @@ package dockerless
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -14,7 +13,7 @@ import (
 	"github.com/loft-sh/devpod/pkg/driver"
 )
 
-func (p *DockerlessProvider) Enter(ctx context.Context, workspaceId string, command string) error {
+func (p *DockerlessProvider) Enter(ctx context.Context, workspaceId string) error {
 	containerDIR := filepath.Join(p.Config.TargetDir, "rootfs", workspaceId)
 	statusDIR := filepath.Join(p.Config.TargetDir, "status", workspaceId)
 
@@ -73,24 +72,7 @@ func (p *DockerlessProvider) Enter(ctx context.Context, workspaceId string, comm
 		return fmt.Errorf("error setting hostname for namespace: %w", err)
 	}
 
-	var args []string
-
-	if command == "" {
-		command = runOptions.Entrypoint
-		args = append(args, runOptions.Cmd...)
-	} else {
-		commandByte, err := base64.StdEncoding.DecodeString(command)
-		if err != nil {
-			return fmt.Errorf("error processing the command: %w", err)
-		}
-
-		args = append(args, "-l")
-		args = append(args, "-c")
-		args = append(args, string(commandByte))
-		command = "sh"
-	}
-
-	cmd := exec.Command(command, args...)
+	cmd := exec.Command(runOptions.Entrypoint, runOptions.Cmd...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
