@@ -1,5 +1,7 @@
 # Dockerless Provider for DevPod
 
+[![Join us on Slack!](docs/static/media/slack.svg)](https://slack.loft.sh/) [![Open in DevPod!](https://devpod.sh/assets/open-in-devpod.svg)](https://devpod.sh/open#https://github.com/loft-sh/devpod-provider-dockerless)
+
 Dockerless provider is useful for situations where you don't have Docker or Podman
 installed, you're on Linux, and you still want to use Devcontainers.
 
