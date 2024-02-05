@@ -42,16 +42,16 @@ github.com/compose-spec/compose-go/utils
 ## explicit; go 1.19
 github.com/containerd/stargz-snapshotter/estargz
 github.com/containerd/stargz-snapshotter/estargz/errorutil
-# github.com/containerd/typeurl v1.0.2
+# github.com/containerd/typeurl/v2 v2.1.1
 ## explicit; go 1.13
-github.com/containerd/typeurl
+github.com/containerd/typeurl/v2
 # github.com/denisbrodbeck/machineid v1.0.1
 ## explicit
 github.com/denisbrodbeck/machineid
 # github.com/distribution/distribution/v3 v3.0.0-20230214150026-36d8c594d7aa
 ## explicit; go 1.18
 github.com/distribution/distribution/v3/reference
-# github.com/docker/cli v23.0.5+incompatible
+# github.com/docker/cli v24.0.4+incompatible
 ## explicit
 github.com/docker/cli/cli/config
 github.com/docker/cli/cli/config/configfile
@@ -105,8 +105,6 @@ github.com/go-logr/logr
 # github.com/gogo/protobuf v1.3.2
 ## explicit; go 1.15
 github.com/gogo/protobuf/proto
-github.com/gogo/protobuf/sortkeys
-github.com/gogo/protobuf/types
 # github.com/google/go-containerregistry v0.15.2
 ## explicit; go 1.18
 github.com/google/go-containerregistry/internal/and
@@ -152,7 +150,7 @@ github.com/k0kubun/go-ansi
 # github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 ## explicit
 github.com/kballard/go-shellquote
-# github.com/klauspost/compress v1.16.5
+# github.com/klauspost/compress v1.17.2
 ## explicit; go 1.18
 github.com/klauspost/compress
 github.com/klauspost/compress/fse
@@ -215,8 +213,8 @@ github.com/mitchellh/go-homedir
 # github.com/mitchellh/mapstructure v1.5.0
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
-# github.com/moby/buildkit v0.11.6
-## explicit; go 1.18
+# github.com/moby/buildkit v0.12.5
+## explicit; go 1.20
 github.com/moby/buildkit/frontend/dockerfile/command
 github.com/moby/buildkit/frontend/dockerfile/dockerignore
 github.com/moby/buildkit/frontend/dockerfile/parser
